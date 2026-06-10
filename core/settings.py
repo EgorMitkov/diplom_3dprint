@@ -14,28 +14,20 @@ import os
 from pathlib import Path
 import dj_database_url
 
-# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-4a^y*_l7=-!3^!&-w10%(z12v%h-^0_e#npu)vg$4^b752df#-')
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-
 ALLOWED_HOSTS = ['*']
 
-# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',    # обязательно до staticfiles
     'django.contrib.staticfiles',
     'shop',
-    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -70,7 +62,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database – использует DATABASE_URL окружения (на Render) или локальную БД по умолчанию
 DATABASES = {
     'default': dj_database_url.config(
         default='postgresql://diplom_user:8888@localhost:5432/diplom_db',
@@ -78,7 +69,6 @@ DATABASES = {
     )
 }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -86,26 +76,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JS, images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Cloudinary settings for media files
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'devmcrdox',
-    'API_KEY': '938978336582523',
-    'API_SECRET': 'EIoC9Haw80mP1gEbq1nsMQVvOJA',
-}
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# CSRF & Security
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
@@ -119,10 +101,8 @@ CSRF_TRUSTED_ORIGINS = [
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = True
 
-# Redirects
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
-
 
 
 """

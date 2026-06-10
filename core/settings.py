@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 import dj_database_url
+import dj-cloudinary-storage
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -104,6 +105,14 @@ SESSION_COOKIE_HTTPONLY = True
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 
+# Cloudinary для медиафайлов (изображения товаров)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('devmcrdox'),
+    'API_KEY': os.environ.get('938978336582523'),
+    'API_SECRET': os.environ.get('EIoC9Haw80mP1gEbq1nsMQVvOJA'),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 """
 Django settings for core project.

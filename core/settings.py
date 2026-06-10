@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,13 +79,17 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'diplom_db',
-        'USER': 'diplom_user',
-        'PASSWORD': '8888',  # Замените на ваш пароль
-        'HOST': 'localhost',
-        'PORT': '5432',
-        'CONN_MAX_AGE': 600,  # секунды, держать соединение открытым 10 минут
+        #'ENGINE': 'django.db.backends.postgresql',
+        #'NAME': 'diplom_db',
+        #'USER': 'diplom_user',
+        #'PASSWORD': '8888',  # Замените на ваш пароль
+        #'HOST': 'localhost',
+        #'PORT': '5432',
+        'default': dj_database_url.config(
+        env='DATABASE_URL',  # явно указываем имя переменной
+        default='postgresql://diplom_user:8888@localhost:5432/diplom_db',
+        conn_max_age=600),
+        #'CONN_MAX_AGE': 600,  # секунды, держать соединение открытым 10 минут
     }
 }
 

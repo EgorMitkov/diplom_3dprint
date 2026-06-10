@@ -12,18 +12,20 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
-import dj_database_url
+import dj_database_url  # обязательно импортировать
 
-# Build paths
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# Для локальной разработки используется значение по умолчанию,
+# на продакшене (Render) секретный ключ берётся из переменной окружения.
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-4a^y*_l7=-!3^!&-w10%(z12v%h-^0_e#npu)vg$4^b752df#-')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*']   # для Render можно оставить *, но в production лучше указывать конкретные хосты
 
 # Application definition
 INSTALLED_APPS = [
@@ -32,15 +34,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',    # обязательно до staticfiles
+    'cloudinary_storage', # <-- ДОБАВИТЬ ЭТО (до staticfiles)
     'django.contrib.staticfiles',
-    'shop',
-    'cloudinary',
+    'shop',  # приложение магазина
+    'cloudinary',         # <-- ДОБАВИТЬ ЭТО
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # для раздачи статики на Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -62,7 +64,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'shop.context_processors.cart_count',
+                'shop.context_processors.cart_count',  # корзина
             ],
         },
     },
@@ -70,7 +72,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database – использует DATABASE_URL окружения (на Render) или локальную БД по умолчанию
+# База данных: использует переменную окружения DATABASE_URL (необходимо задать на Render)
+# Если переменная не задана, используется локальный PostgreSQL (для разработки).
 DATABASES = {
     'default': dj_database_url.config(
         default='postgresql://diplom_user:8888@localhost:5432/diplom_db',
@@ -80,10 +83,18 @@ DATABASES = {
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
 # Internationalization
@@ -92,34 +103,30 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JS, images)
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Cloudinary settings for media files
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'devmcrdox',
-    'API_KEY': '938978336582523',
-    'API_SECRET': 'EIoC9Haw80mP1gEbq1nsMQVvOJA',
-}
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Media files (загруженные пользователем файлы)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# CSRF & Security
-CSRF_COOKIE_SECURE = False
+# CSRF и безопасность
+CSRF_COOKIE_SECURE = False          # для разработки; на продакшене с HTTPS должен быть True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1',
     'http://localhost',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
-    'https://*.onrender.com',
+    'https://*.onrender.com',        # для доменов Render
 ]
 
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = True
 
-# Redirects
+# URL для перенаправления после входа
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 

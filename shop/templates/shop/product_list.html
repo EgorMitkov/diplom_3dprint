@@ -1,0 +1,195 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Каталог товаров{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Боковая панель с фильтрами -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Фильтры</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filterForm">
+                        <!-- Поиск -->
+                        <div class="mb-3">
+                            <label class="form-label">Поиск</label>
+                            <input type="text" name="search" class="form-control" placeholder="Поиск товаров..." value="{{ search_query|default:'' }}">
+                        </div>
+
+                        <!-- Категория изделия -->
+                        <div class="mb-3">
+                            <label class="form-label">Категория изделия</label>
+                            <select name="category" class="form-select">
+                                <option value="">Все категории</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>
+                                    {{ cat.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Вид пластика -->
+                        <div class="mb-3">
+                            <label class="form-label">Вид пластика</label>
+                            <select name="material" class="form-select">
+                                <option value="">Все материалы</option>
+                                {% for mat in materials %}
+                                <option value="{{ mat.slug }}" {% if selected_material == mat.slug %}selected{% endif %}>
+                                    {{ mat.name }} ({{ mat.get_material_type_display }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Тип услуги -->
+                        <div class="mb-3">
+                            <label class="form-label">Тип товара</label>
+                            <select name="product_type" class="form-select">
+                                <option value="">Все</option>
+                                <option value="ready_product" {% if selected_type == 'ready_product' %}selected{% endif %}>
+                                    Готовые изделия
+                                </option>
+                                <option value="printing_service" {% if selected_type == 'printing_service' %}selected{% endif %}>
+                                    Услуги печати
+                                </option>
+                                <option value="modeling_service" {% if selected_type == 'modeling_service' %}selected{% endif %}>
+                                    Услуги моделирования
+                                </option>
+                                <option value="postprocessing_service" {% if selected_type == 'postprocessing_service' %}selected{% endif %}>
+                                    Постобработка
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Цена -->
+                        <div class="mb-3">
+                            <label class="form-label">Цена</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="number" name="min_price" class="form-control"
+                                           placeholder="от" value="{{ min_price }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" name="max_price" class="form-control"
+                                           placeholder="до" value="{{ max_price }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-filter"></i> Применить
+                        </button>
+                        <a href="{% url 'product_list' %}" class="btn btn-secondary w-100">
+                            <i class="fas fa-undo"></i> Сбросить
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список товаров -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Каталог товаров</h2>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-sort"></i> Сортировать
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="?sort=name">По названию</a></li>
+                        <li><a class="dropdown-item" href="?sort=price_asc">По цене (возрастание)</a></li>
+                        <li><a class="dropdown-item" href="?sort=price_desc">По цене (убывание)</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card product-card h-100">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <div class="card-img-top bg-secondary text-white text-center py-5">
+                            <i class="fas fa-cube fa-3x"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text text-muted small">
+                                <i class="fas fa-tag"></i> {{ product.category.name }}
+                                {% if product.material %}
+                                <br><i class="fas fa-cube"></i> {{ product.material.name }}
+                                {% endif %}
+                            </p>
+                            <p class="card-text">{{ product.description|truncatechars:80 }}</p>
+                            <div class="price">
+                                {{ product.price }} ₽
+                                {% if product.price_per_unit %}
+                                <small class="text-muted">{{ product.price_per_unit }}</small>
+                                {% endif %}
+                            </div>
+                            {% if product.product_type == 'ready_product' %}
+                                {% if product.is_in_stock %}
+                                <span class="badge bg-success">В наличии</span>
+                                {% else %}
+                                <span class="badge bg-danger">Нет в наличии</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-info">Услуга</span>
+                            {% endif %}
+                            <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary mt-3 w-100">
+                                <i class="fas fa-info-circle"></i> Подробнее
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h3>Товары не найдены</h3>
+                    <p>Попробуйте изменить параметры фильтрации</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-primary">Сбросить фильтры</a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Пагинация -->
+            {% if products.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            &laquo; Предыдущая
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in products.paginator.page_range %}
+                    <li class="page-item {% if products.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endfor %}
+
+                    {% if products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Следующая &raquo;
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

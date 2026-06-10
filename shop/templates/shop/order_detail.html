@@ -1,0 +1,137 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Заказ №{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'profile' %}">Личный кабинет</a></li>
+                    <li class="breadcrumb-item active">Заказ №{{ order.order_number }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Детали заказа</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Номер заказа:</strong> {{ order.order_number }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Дата заказа:</strong> {{ order.created_at|date:"d.m.Y H:i" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Статус:</strong>
+                            <span class="badge bg-{% if order.status == 'completed' %}success{% elif order.status == 'cancelled' %}danger{% else %}warning{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Статус оплаты:</strong>
+                            <span class="badge bg-{% if order.payment_status == 'paid' %}success{% else %}secondary{% endif %}">
+                                {{ order.get_payment_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mt-4">Товары в заказе:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Товар</th>
+                                    <th>Кол-во</th>
+                                    <th>Цена</th>
+                                    <th>Сумма</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items.all %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.price }} ₽</td>
+                                    <td>{{ item.get_total }} ₽</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Сумма:</strong></td>
+                                    <td><strong>{{ order.subtotal }} ₽</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Доставка:</strong></td>
+                                    <td><strong>{{ order.delivery_cost }} ₽</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Итого:</strong></td>
+                                    <td><strong class="text-primary">{{ order.total }} ₽</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Информация о доставке</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Получатель:</strong> {{ order.customer_name }}</p>
+                    <p><strong>Телефон:</strong> {{ order.customer_phone }}</p>
+                    <p><strong>Email:</strong> {{ order.customer_email }}</p>
+                    <p><strong>Адрес:</strong> {{ order.delivery_address }}</p>
+                    {% if order.delivery_tracking %}
+                    <p><strong>Трек-номер:</strong> {{ order.delivery_tracking }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if order.model_file %}
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">3D модель</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Файл:</strong> {{ order.model_file.name|slice:"20:" }}</p>
+                    <a href="{{ order.model_file.url }}" class="btn btn-sm btn-outline-primary" download>
+                        <i class="fas fa-download"></i> Скачать модель
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Помощь</h5>
+                </div>
+                <div class="card-body">
+                    <p>Есть вопросы по заказу?</p>
+                    <a href="tel:+79991234567" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-phone"></i> Позвонить
+                    </a>
+                    <a href="mailto:support@3dprint.ru" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-envelope"></i> Написать
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

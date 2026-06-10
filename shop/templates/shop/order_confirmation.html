@@ -1,0 +1,220 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Заказ оформлен!{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirmation-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .confirmation-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        padding: 40px;
+        max-width: 600px;
+        width: 100%;
+        text-align: center;
+        animation: fadeInUp 0.6s ease;
+        position: relative;
+        z-index: 2;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .success-icon {
+        width: 100px;
+        height: 100px;
+        background: #28a745;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+        animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s both;
+    }
+
+    @keyframes scaleIn {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .success-icon i {
+        font-size: 50px;
+        color: white;
+    }
+
+    .order-number {
+        background: #f8f9fa;
+        padding: 10px 20px;
+        border-radius: 50px;
+        display: inline-block;
+        font-family: monospace;
+        font-size: 18px;
+        margin: 20px 0;
+        animation: fadeIn 0.5s ease 0.4s both;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .info-message {
+        background: #e8f5e9;
+        border-left: 4px solid #28a745;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        text-align: left;
+        animation: fadeIn 0.5s ease 0.6s both;
+    }
+
+    .info-message i {
+        color: #28a745;
+        margin-right: 10px;
+    }
+
+    .action-buttons {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        animation: fadeIn 0.5s ease 0.8s both;
+    }
+
+    .btn-primary, .btn-outline-primary {
+        transition: all 0.3s;
+    }
+
+    .btn-primary:hover, .btn-outline-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Эффект конфетти */
+    .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #f0f;
+        position: absolute;
+        top: -10px;
+        animation: fall linear forwards;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    @keyframes fall {
+        to {
+            transform: translateY(100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirmation-container" id="confettiContainer">
+    <div class="confirmation-card">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+
+        <h1 class="mb-3">Заказ оформлен!</h1>
+        <p class="lead">Спасибо за доверие</p>
+
+        <div class="order-number">
+            <i class="fas fa-hashtag"></i> {{ order.order_number }}
+        </div>
+
+        <div class="info-message">
+            <i class="fas fa-phone-alt"></i>
+            <strong>В ближайшее время с вами свяжется менеджер</strong><br>
+            Мы уточним детали заказа, способ оплаты и время доставки.
+            Обычно это занимает не более 30 минут в рабочее время.
+        </div>
+
+        <div class="info-message" style="background: #fff3e0; border-left-color: #ff9800;">
+            <i class="fas fa-clock"></i>
+            <strong>Статус заказа:</strong> {{ order.get_status_display }}<br>
+            Вы можете отслеживать статус в <a href="{% url 'my_orders' %}">личном кабинете</a>.
+        </div>
+
+        <div class="action-buttons">
+            <a href="{% url 'home' %}" class="btn btn-primary">
+                <i class="fas fa-home"></i> На главную
+            </a>
+            <a href="{% url 'my_orders' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> Мои заказы
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Функция для создания конфетти
+    function createConfetti() {
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#ff9f4a', '#f7b731'];
+        const container = document.getElementById('confettiContainer');
+
+        for (let i = 0; i < 150; i++) {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+            confetti.style.animationDelay = Math.random() * 0.5 + 's';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.width = Math.random() * 8 + 4 + 'px';
+            confetti.style.height = Math.random() * 8 + 4 + 'px';
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            container.appendChild(confetti);
+
+            // Удаляем элемент после окончания анимации
+            setTimeout(() => {
+                confetti.remove();
+            }, (parseFloat(confetti.style.animationDuration) + parseFloat(confetti.style.animationDelay || 0)) * 1000);
+        }
+    }
+
+    // Запускаем конфетти через 0.3 секунды после загрузки страницы
+    setTimeout(createConfetti, 300);
+
+    // Дополнительная анимация при наведении на кнопки
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        btn.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+</script>
+{% endblock %}

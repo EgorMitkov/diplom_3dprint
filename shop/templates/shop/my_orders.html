@@ -1,0 +1,354 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Мои заказы{% endblock %}
+
+{% block extra_css %}
+<style>
+    .orders-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 50px;
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .order-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .order-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .order-number {
+        font-size: 18px;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .order-date {
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .order-body {
+        padding: 20px;
+    }
+    
+    .order-items {
+        margin-bottom: 20px;
+    }
+    
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    
+    .item-name {
+        flex: 2;
+    }
+    
+    .item-quantity {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .item-price {
+        flex: 1;
+        text-align: right;
+    }
+    
+    .order-footer {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-top: 1px solid #e0e0e0;
+        border-radius: 0 0 10px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .order-total {
+        font-size: 20px;
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        text-align: center;
+    }
+    
+    .status-pending { background: #ffc107; color: #333; }
+    .status-modeling { background: #17a2b8; color: white; }
+    .status-printing { background: #fd7e14; color: white; }
+    .status-postprocessing { background: #6f42c1; color: white; }
+    .status-ready { background: #20c997; color: white; }
+    .status-completed { background: #28a745; color: white; }
+    .status-cancelled { background: #dc3545; color: white; }
+    
+    .payment-status {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+    
+    .payment-paid { background: #d4edda; color: #155724; }
+    .payment-unpaid { background: #f8d7da; color: #721c24; }
+    
+    .tracking-link {
+        color: #667eea;
+        text-decoration: none;
+    }
+    
+    .tracking-link:hover {
+        text-decoration: underline;
+    }
+    
+    .empty-orders {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 10px;
+    }
+    
+    .empty-orders i {
+        font-size: 64px;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .order-card {
+        animation: fadeIn 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orders-header">
+    <div class="container text-center">
+        <h1 class="display-4">Мои заказы</h1>
+        <p class="lead">История и статусы ваших заказов</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Фильтры -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Статус заказа</label>
+                <select name="status" class="form-select">
+                    <option value="">Все заказы</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Ожидает обработки</option>
+                    <option value="modeling" {% if selected_status == 'modeling' %}selected{% endif %}>Моделирование</option>
+                    <option value="printing" {% if selected_status == 'printing' %}selected{% endif %}>Печать</option>
+                    <option value="postprocessing" {% if selected_status == 'postprocessing' %}selected{% endif %}>Постобработка</option>
+                    <option value="ready" {% if selected_status == 'ready' %}selected{% endif %}>Готов к выдаче</option>
+                    <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Выполнен</option>
+                    <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Отменен</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Сортировка</label>
+                <select name="sort" class="form-select">
+                    <option value="-created_at" {% if sort == '-created_at' %}selected{% endif %}>Сначала новые</option>
+                    <option value="created_at" {% if sort == 'created_at' %}selected{% endif %}>Сначала старые</option>
+                    <option value="-total" {% if sort == '-total' %}selected{% endif %}>По сумме (дорогие)</option>
+                    <option value="total" {% if sort == 'total' %}selected{% endif %}>По сумме (дешевые)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Поиск по номеру заказа</label>
+                <input type="text" name="search" class="form-control" placeholder="Введите номер заказа" value="{{ search_query|default:'' }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Применить
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Список заказов -->
+    {% if orders %}
+        {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <div>
+                    <span class="order-number">Заказ #{{ order.order_number }}</span>
+                    <span class="order-date ms-3">
+                        <i class="far fa-calendar-alt"></i> {{ order.created_at|date:"d.m.Y H:i" }}
+                    </span>
+                </div>
+                <div>
+                    <span class="status-badge status-{{ order.status }}">
+                        {{ order.get_status_display }}
+                    </span>
+                    <span class="payment-status payment-{{ order.payment_status }} ms-2">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="order-body">
+                <div class="order-items">
+                    {% for item in order.items.all|slice:":3" %}
+                    <div class="order-item">
+                        <div class="item-name">
+                            <strong>{{ item.product.name }}</strong>
+                            {% if item.color_choice %}
+                            <br><small class="text-muted">Цвет: {{ item.color_choice }}</small>
+                            {% endif %}
+                            {% if item.infill_percent %}
+                            <br><small class="text-muted">Заполнение: {{ item.infill_percent }}%</small>
+                            {% endif %}
+                        </div>
+                        <div class="item-quantity">x{{ item.quantity }}</div>
+                        <div class="item-price">{{ item.get_total }} ₽</div>
+                    </div>
+                    {% endfor %}
+                    {% if order.items.count > 3 %}
+                    <div class="text-muted mt-2">
+                        <small>и еще {{ order.items.count|add:"-3" }} товар(ов)</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="order-footer">
+                <div>
+                    {% if order.delivery_tracking %}
+                    <a href="#" class="tracking-link">
+                        <i class="fas fa-truck"></i> Трек-номер: {{ order.delivery_tracking }}
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <span class="text-muted">Итого:</span>
+                        <span class="order-total">{{ order.total }} ₽</span>
+                    </div>
+                    <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye"></i> Подробнее
+                    </a>
+                    {% if order.can_cancel %}
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal{{ order.id }}">
+                        <i class="fas fa-times"></i> Отменить
+                    </button>
+                    
+                    <!-- Модальное окно подтверждения отмены -->
+                    <div class="modal fade" id="cancelModal{{ order.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Отмена заказа #{{ order.order_number }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Вы уверены, что хотите отменить заказ?</p>
+                                    <p class="text-danger"><small>Это действие нельзя отменить.</small></p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет, закрыть</button>
+                                    <a href="{% url 'cancel_order' order.id %}" class="btn btn-danger">Да, отменить заказ</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Пагинация -->
+        {% if orders.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if orders.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ orders.previous_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">
+                        &laquo; Предыдущая
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in orders.paginator.page_range %}
+                <li class="page-item {% if orders.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endfor %}
+                
+                {% if orders.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ orders.next_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">
+                        Следующая &raquo;
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+    {% else %}
+    <div class="empty-orders">
+        <i class="fas fa-shopping-bag"></i>
+        <h3>У вас пока нет заказов</h3>
+        <p class="text-muted">Сделайте первый заказ, чтобы он появился здесь</p>
+        <div class="mt-4">
+            <a href="{% url 'product_list' %}" class="btn btn-primary me-2">
+                <i class="fas fa-shopping-cart"></i> Перейти в каталог
+            </a>
+            <a href="{% url 'upload_model' %}" class="btn btn-outline-primary">
+                <i class="fas fa-upload"></i> Заказать печать по чертежам
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

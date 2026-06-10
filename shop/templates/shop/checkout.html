@@ -1,0 +1,170 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-card {
+        animation: fadeInLeft 0.5s ease;
+    }
+    .summary-card {
+        animation: fadeInRight 0.5s ease;
+    }
+    @keyframes fadeInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    @keyframes fadeInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    .submit-btn {
+        transition: all 0.3s;
+    }
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40,167,69,0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Оформление заказа</h1>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Контактная информация</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="checkoutForm">
+                        {% csrf_token %}
+
+                        {{ form.non_field_errors }}
+
+                        <div class="mb-3">
+                            <label for="{{ form.customer_name.id_for_label }}" class="form-label">ФИО</label>
+                            {{ form.customer_name }}
+                            {{ form.customer_name.errors }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.customer_email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.customer_email }}
+                            {{ form.customer_email.errors }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.customer_phone.id_for_label }}" class="form-label">Телефон</label>
+                            {{ form.customer_phone }}
+                            {{ form.customer_phone.errors }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.delivery_address.id_for_label }}" class="form-label">Адрес доставки</label>
+                            {{ form.delivery_address }}
+                            {{ form.delivery_address.errors }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.delivery_notes.id_for_label }}" class="form-label">Примечания к доставке</label>
+                            {{ form.delivery_notes }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.customer_comment.id_for_label }}" class="form-label">Комментарий к заказу</label>
+                            {{ form.customer_comment }}
+                        </div>
+
+                        {% if user.is_authenticated %}
+                            <div class="mb-3 form-check">
+                                {{ form.save_to_profile }}
+                                <label class="form-check-label" for="{{ form.save_to_profile.id_for_label }}">
+                                    {{ form.save_to_profile.label }}
+                                </label>
+                                <div class="help-text">{{ form.save_to_profile.help_text }}</div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Вы не авторизованы. После оформления заказа вы сможете создать аккаунт для отслеживания статуса.
+                            </div>
+                            <div class="mb-3 form-check">
+                                {{ form.create_account }}
+                                <label class="form-check-label" for="{{ form.create_account.id_for_label }}">
+                                    {{ form.create_account.label }}
+                                </label>
+                                <div class="help-text">{{ form.create_account.help_text }}</div>
+                            </div>
+                            <div id="passwordField" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="{{ form.password.id_for_label }}" class="form-label">Пароль</label>
+                                    {{ form.password }}
+                                    {{ form.password.errors }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check"></i> Подтвердить заказ
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Ваш заказ</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in cart_items %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ item.product.name }} x {{ item.quantity }}</span>
+                        <span>{{ item.subtotal }} ₽</span>
+                    </div>
+                    {% endfor %}
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Итого:</strong>
+                        <strong>{{ total }} ₽</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Показываем поле пароля только если выбран чекбокс регистрации
+    const createAccountCheckbox = document.getElementById('{{ form.create_account.id_for_label }}');
+    const passwordField = document.getElementById('passwordField');
+    if (createAccountCheckbox) {
+        createAccountCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                passwordField.style.display = 'block';
+                document.getElementById('{{ form.password.id_for_label }}').required = true;
+            } else {
+                passwordField.style.display = 'none';
+                document.getElementById('{{ form.password.id_for_label }}').required = false;
+            }
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

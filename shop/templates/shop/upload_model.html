@@ -1,0 +1,326 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Заказать печать по чертежам{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-top: 30px;
+        margin-bottom: 30px;
+    }
+    .drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #fafafa;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+    .file-info {
+        margin-top: 10px;
+        padding: 10px;
+        background: #e8f5e9;
+        border-radius: 5px;
+        display: none;
+    }
+    .file-info.show {
+        display: block;
+    }
+    .cost-preview {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        display: none;
+    }
+    .cost-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #ddd;
+    }
+    .cost-total {
+        font-size: 22px;
+        font-weight: bold;
+        color: #28a745;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    .form-label {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="upload-card">
+                <h2 class="mb-4 text-center">📁 Заказать печать по чертежам</h2>
+                <p class="text-center text-muted mb-4">Загрузите свою 3D модель, и мы рассчитаем стоимость</p>
+
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+
+                    <!-- Загрузка файла -->
+                    <div class="mb-4">
+                        <label class="form-label">3D модель *</label>
+                        <div class="drop-zone" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt fa-3x mb-2"></i>
+                            <h5>Перетащите файл или нажмите для выбора</h5>
+                            <p class="text-muted">STL, OBJ, 3MF, STEP (до 500 МБ)</p>
+                        </div>
+                        <input type="file" name="model_file" id="id_model_file" style="display: none;">
+                        <div id="fileInfo" class="file-info">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span id="fileName"></span>
+                            <button type="button" class="btn btn-sm btn-link" id="clearFile">Очистить</button>
+                        </div>
+                    </div>
+
+                    <!-- Количество -->
+                    <div class="mb-3">
+                        <label for="id_quantity" class="form-label">Количество</label>
+                        <input type="number" name="quantity" id="id_quantity" class="form-control" value="1" min="1">
+                    </div>
+
+                    <!-- Параметры печати -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_material_type" class="form-label">Материал</label>
+                            <select name="material_type" id="id_material_type" class="form-select">
+                                <option value="pla">PLA</option>
+                                <option value="abs">ABS</option>
+                                <option value="petg">PETG</option>
+                                <option value="resin">Resin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_color" class="form-label">Цвет</label>
+                            <input type="text" name="color" id="id_color" class="form-control" placeholder="Белый, черный...">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modelVolume" class="form-label">Объём модели (см³)</label>
+                            <input type="number" class="form-control" id="modelVolume" step="0.1" min="0.1" placeholder="Например: 50">
+                            <div class="help-text">Можно измерить в 3D-редакторе (Cura, Blender)</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Расчётный вес (г)</label>
+                            <input type="text" class="form-control" id="modelWeight" readonly placeholder="Рассчитается автоматически">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_infill_percent" class="form-label">Заполнение (%)</label>
+                            <input type="number" name="infill_percent" id="id_infill_percent" class="form-control" value="20" min="0" max="100">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_layer_height" class="form-label">Высота слоя</label>
+                            <select name="layer_height" id="id_layer_height" class="form-select">
+                                <option value="0.1">0.1 мм - Высокое качество</option>
+                                <option value="0.15">0.15 мм</option>
+                                <option value="0.2" selected>0.2 мм - Стандарт</option>
+                                <option value="0.25">0.25 мм</option>
+                                <option value="0.3">0.3 мм - Быстрая печать</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <input type="checkbox" name="need_support" id="id_need_support" class="form-check-input" checked>
+                            <label class="form-check-label" for="id_need_support">Поддержки</label>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <input type="checkbox" name="need_polishing" id="id_need_polishing" class="form-check-input">
+                            <label class="form-check-label" for="id_need_polishing">Шлифовка (+500 руб.)</label>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <input type="checkbox" name="need_painting" id="id_need_painting" class="form-check-input">
+                            <label class="form-check-label" for="id_need_painting">Покраска (+1000 руб.)</label>
+                        </div>
+                    </div>
+
+                    <!-- Блок предварительного расчёта -->
+                    <div id="costPreview" class="cost-preview">
+                        <h5 class="mb-3">💰 Предварительная стоимость</h5>
+                        <div class="cost-item">
+                            <span>Вес модели:</span>
+                            <strong id="previewWeight">0 г</strong>
+                        </div>
+                        <div class="cost-item">
+                            <span>Стоимость материала:</span>
+                            <strong id="materialCost">0 ₽</strong>
+                        </div>
+                        <div class="cost-item">
+                            <span>Стоимость печати:</span>
+                            <strong id="printCost">0 ₽</strong>
+                        </div>
+                        <div class="cost-item">
+                            <span>Доп. услуги:</span>
+                            <strong id="extraCost">0 ₽</strong>
+                        </div>
+                        <div class="cost-item cost-total">
+                            <span>Итого за 1 шт.:</span>
+                            <strong id="totalCost">0 ₽</strong>
+                        </div>
+                        <div class="cost-item">
+                            <span>Итого за <span id="quantityDisplay">1</span> шт.:</span>
+                            <strong id="totalForQuantity">0 ₽</strong>
+                        </div>
+                        <div class="help-text mt-2">* Точная стоимость будет рассчитана после проверки модели менеджером</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-4" id="submitBtn">
+                        <i class="fas fa-cart-plus"></i> Добавить в корзину
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Константы для расчёта
+    const materialPrices = {'pla': 5, 'abs': 6, 'petg': 7, 'resin': 8};
+    const densities = {'pla': 1.24, 'abs': 1.04, 'petg': 1.27, 'resin': 1.1};
+    const layerFactors = {0.1: 1.5, 0.15: 1.2, 0.2: 1.0, 0.25: 0.8, 0.3: 0.6};
+
+    // Элементы DOM
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('id_model_file');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileNameSpan = document.getElementById('fileName');
+    const clearBtn = document.getElementById('clearFile');
+    const submitBtn = document.getElementById('submitBtn');
+    const volumeInput = document.getElementById('modelVolume');
+    const weightInput = document.getElementById('modelWeight');
+    const costPreview = document.getElementById('costPreview');
+    const quantityInput = document.getElementById('id_quantity');
+    const quantityDisplay = document.getElementById('quantityDisplay');
+    const materialSelect = document.getElementById('id_material_type');
+    const infillInput = document.getElementById('id_infill_percent');
+    const layerSelect = document.getElementById('id_layer_height');
+    const polishingCheck = document.getElementById('id_need_polishing');
+    const paintingCheck = document.getElementById('id_need_painting');
+
+
+    // Drag & Drop
+    if (dropZone) {
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFileSelect(e.target.files[0]);
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            volumeInput.value = '';
+            weightInput.value = '';
+            costPreview.style.display = 'none';
+        });
+    }
+
+    function handleFileSelect(file) {
+        fileNameSpan.textContent = file.name;
+        fileInfo.classList.add('show');
+        updateCostPreview();
+    }
+
+    function calculateWeight() {
+        const volume = parseFloat(volumeInput.value);
+        const material = materialSelect.value;
+        const density = densities[material] || 1.24;
+        const infill = parseInt(infillInput.value) / 100;
+        if (!isNaN(volume) && volume > 0) {
+            const weight = volume * density * infill;
+            weightInput.value = weight.toFixed(2);
+            return weight;
+        }
+        return 0;
+    }
+
+    function updateCostPreview() {
+        const material = materialSelect.value;
+        const infill = parseInt(infillInput.value);
+        const layerHeight = parseFloat(layerSelect.value);
+        const needPolishing = polishingCheck.checked;
+        const needPainting = paintingCheck.checked;
+        const quantity = parseInt(quantityInput.value) || 1;
+
+        if (quantityDisplay) quantityDisplay.textContent = quantity;
+
+        let weight = calculateWeight();
+        if (weight === 0) weight = 50; // примерный вес
+
+        const pricePerGram = materialPrices[material] || 5;
+        const layerFactor = layerFactors[layerHeight] || 1.0;
+
+        const materialCost = weight * pricePerGram;
+        const printCost = weight * 3 * layerFactor;
+
+        let extraCost = 0;
+        if (needPolishing) extraCost += 500;
+        if (needPainting) extraCost += 1000;
+
+        const totalPerItem = materialCost + printCost + extraCost;
+        const totalForQuantity = totalPerItem * quantity;
+
+        document.getElementById('previewWeight').textContent = weight.toFixed(2) + ' г';
+        document.getElementById('materialCost').textContent = Math.round(materialCost) + ' ₽';
+        document.getElementById('printCost').textContent = Math.round(printCost) + ' ₽';
+        document.getElementById('extraCost').textContent = extraCost + ' ₽';
+        document.getElementById('totalCost').textContent = Math.round(totalPerItem) + ' ₽';
+        document.getElementById('totalForQuantity').textContent = Math.round(totalForQuantity) + ' ₽';
+
+        costPreview.style.display = 'block';
+    }
+
+    // Слушатели для обновления расчёта
+    if (materialSelect) materialSelect.addEventListener('change', updateCostPreview);
+    if (infillInput) infillInput.addEventListener('input', updateCostPreview);
+    if (layerSelect) layerSelect.addEventListener('change', updateCostPreview);
+    if (polishingCheck) polishingCheck.addEventListener('change', updateCostPreview);
+    if (paintingCheck) paintingCheck.addEventListener('change', updateCostPreview);
+    if (quantityInput) quantityInput.addEventListener('input', updateCostPreview);
+    if (volumeInput) volumeInput.addEventListener('input', () => { calculateWeight(); updateCostPreview(); });
+
+    // Запускаем расчёт при загрузке
+    setTimeout(updateCostPreview, 100);
+</script>
+{% endblock %}

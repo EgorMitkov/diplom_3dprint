@@ -1,0 +1,337 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 50px;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        overflow: hidden;
+    }
+    
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .profile-avatar i {
+        font-size: 60px;
+        color: #667eea;
+    }
+    
+    .profile-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+    
+    .profile-card-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .profile-card-header h5 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .profile-card-body {
+        padding: 20px;
+    }
+    
+    .info-row {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-label {
+        width: 150px;
+        font-weight: bold;
+        color: #666;
+    }
+    
+    .info-value {
+        flex: 1;
+        color: #333;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .stat-number {
+        font-size: 36px;
+        font-weight: bold;
+    }
+    
+    .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-top: 5px;
+    }
+    
+    .order-status {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .status-pending { background: #ffc107; color: #333; }
+    .status-printing { background: #17a2b8; color: white; }
+    .status-completed { background: #28a745; color: white; }
+    .status-cancelled { background: #dc3545; color: white; }
+    
+    .nav-tabs .nav-link {
+        color: #667eea;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        background-color: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <div class="container text-center">
+        <div class="profile-avatar">
+            {% if user.profile.avatar %}
+            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+            {% else %}
+            <i class="fas fa-user-circle"></i>
+            {% endif %}
+        </div>
+        <h2>{{ user.get_full_name|default:user.username }}</h2>
+        <p class="mb-0">{{ user.email }}</p>
+        <p class="mb-0">
+            <small>На сайте с {{ user.date_joined|date:"d.m.Y" }}</small>
+        </p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row">
+        <!-- Статистика -->
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ orders_count }}</div>
+                <div class="stat-label">Всего заказов</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stat-number">{{ active_orders_count }}</div>
+                <div class="stat-label">Активных заказов</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-number">{{ total_spent }} ₽</div>
+                <div class="stat-label">Потрачено</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat-number">{{ completed_orders_count }}</div>
+                <div class="stat-label">Выполнено</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Вкладки -->
+    <ul class="nav nav-tabs mb-4" id="profileTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                <i class="fas fa-user"></i> Профиль
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab">
+                <i class="fas fa-shopping-bag"></i> Мои заказы
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                <i class="fas fa-cog"></i> Настройки
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content">
+        <!-- Вкладка профиля -->
+        <div class="tab-pane fade show active" id="profile" role="tabpanel">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <h5><i class="fas fa-info-circle"></i> Личная информация</h5>
+                </div>
+                <div class="profile-card-body">
+                    <div class="info-row">
+                        <div class="info-label">Имя пользователя:</div>
+                        <div class="info-value">{{ user.username }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Полное имя:</div>
+                        <div class="info-value">{{ user.get_full_name|default:"Не указано" }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Email:</div>
+                        <div class="info-value">{{ user.email }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Телефон:</div>
+                        <div class="info-value">{{ user.profile.phone|default:"Не указан" }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Адрес по умолчанию:</div>
+                        <div class="info-value">{{ user.profile.default_address|default:"Не указан" }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Предпочитаемый материал:</div>
+                        <div class="info-value">{{ user.profile.preferred_material|default:"Не указан" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Вкладка заказов -->
+        <div class="tab-pane fade" id="orders" role="tabpanel">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <h5><i class="fas fa-history"></i> История заказов</h5>
+                </div>
+                <div class="profile-card-body">
+                    {% if orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>№ заказа</th>
+                                    <th>Дата</th>
+                                    <th>Сумма</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td><strong>{{ order.order_number }}</strong></td>
+                                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                                    <td>{{ order.total }} ₽</td>
+                                    <td>
+                                        <span class="order-status status-{{ order.status }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Детали
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                        <p>У вас пока нет заказов</p>
+                        <a href="{% url 'product_list' %}" class="btn btn-primary">Перейти в каталог</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Вкладка настроек -->
+        <div class="tab-pane fade" id="settings" role="tabpanel">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <h5><i class="fas fa-edit"></i> Редактировать профиль</h5>
+                </div>
+                <div class="profile-card-body">
+                    <form method="post" enctype="multipart/form-data" action="{% url 'update_profile' %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Имя</label>
+                                <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Фамилия</label>
+                                <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Телефон</label>
+                            <input type="tel" name="phone" class="form-control" value="{{ user.profile.phone }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Адрес по умолчанию</label>
+                            <textarea name="default_address" class="form-control" rows="3">{{ user.profile.default_address }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Предпочитаемый материал</label>
+                            <select name="preferred_material" class="form-select">
+                                <option value="">Выберите материал</option>
+                                <option value="pla" {% if user.profile.preferred_material == 'pla' %}selected{% endif %}>PLA</option>
+                                <option value="abs" {% if user.profile.preferred_material == 'abs' %}selected{% endif %}>ABS</option>
+                                <option value="petg" {% if user.profile.preferred_material == 'petg' %}selected{% endif %}>PETG</option>
+                                <option value="resin" {% if user.profile.preferred_material == 'resin' %}selected{% endif %}>Resin</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Аватар</label>
+                            <input type="file" name="avatar" class="form-control" accept="image/*">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="notifications_enabled" class="form-check-input" id="notifications" {% if user.profile.notifications_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="notifications">
+                                Получать уведомления о статусе заказов по email
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить изменения
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Калькулятор 3D печати{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calculator-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 50px;
+    }
+    
+    .calculator-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .result-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .result-item {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .result-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .result-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .form-range {
+        width: 100%;
+    }
+    
+    .infill-value {
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .material-card {
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid #e0e0e0;
+        margin-bottom: 15px;
+    }
+    
+    .material-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .material-card.selected {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+    
+    .material-icon {
+        font-size: 40px;
+        margin-bottom: 10px;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: #999;
+        margin-top: 5px;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .result-card {
+        animation: fadeIn 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calculator-section">
+    <div class="container text-center">
+        <h1 class="display-4">Калькулятор 3D печати</h1>
+        <p class="lead">Рассчитайте стоимость печати вашей модели</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="calculator-card">
+                <form method="post" id="calculatorForm">
+                    {% csrf_token %}
+                    
+                    <!-- Тип материала -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Выберите материал</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="material-card text-center p-3" data-material="pla">
+                                    <div class="material-icon">🌽</div>
+                                    <h6>PLA</h6>
+                                    <small class="text-muted">Биопластик</small>
+                                    <div class="help-text">Цена: 5 руб/г</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="material-card text-center p-3" data-material="abs">
+                                    <div class="material-icon">🔧</div>
+                                    <h6>ABS</h6>
+                                    <small class="text-muted">Прочный пластик</small>
+                                    <div class="help-text">Цена: 6 руб/г</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="material-card text-center p-3" data-material="petg">
+                                    <div class="material-icon">💪</div>
+                                    <h6>PETG</h6>
+                                    <small class="text-muted">Ударопрочный</small>
+                                    <div class="help-text">Цена: 7 руб/г</div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="material_type" id="material_type" value="pla">
+                    </div>
+                    
+                    <!-- Объем модели -->
+                    <div class="mb-4">
+                        <label for="volume" class="form-label fw-bold">Объем модели (см³)</label>
+                        <input type="number" class="form-control form-control-lg" id="volume" name="volume" 
+                               step="0.1" min="0.1" value="10" required>
+                        <div class="help-text">Примерный объем модели. Можно измерить в 3D-редакторе</div>
+                    </div>
+                    
+                    <!-- Процент заполнения -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            Процент заполнения: <span id="infillValue" class="infill-value">20%</span>
+                        </label>
+                        <input type="range" class="form-range" id="infill" name="infill" 
+                               min="0" max="100" step="5" value="20">
+                        <div class="d-flex justify-content-between">
+                            <small>Пустой</small>
+                            <small>Экономичный</small>
+                            <small>Стандартный</small>
+                            <small>Прочный</small>
+                            <small>Максимальный</small>
+                        </div>
+                        <div class="help-text">Чем выше заполнение, тем прочнее, но дороже</div>
+                    </div>
+                    
+                    <!-- Высота слоя -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Высота слоя</label>
+                        <select class="form-select" name="layer_height" id="layer_height">
+                            <option value="0.1">0.1 мм - Высокое качество</option>
+                            <option value="0.15">0.15 мм</option>
+                            <option value="0.2" selected>0.2 мм - Стандарт</option>
+                            <option value="0.25">0.25 мм</option>
+                            <option value="0.3">0.3 мм - Быстрая печать</option>
+                        </select>
+                        <div class="help-text">Меньшая высота слоя дает более гладкую поверхность</div>
+                    </div>
+                    
+                    <!-- Кнопка расчета -->
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-calculator"></i> Рассчитать стоимость
+                    </button>
+                </form>
+                
+                <!-- Результаты расчета -->
+                {% if result %}
+                <div class="result-card">
+                    <h4 class="text-center mb-4">Результат расчета</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="result-item">
+                                <div class="result-label">Вес модели</div>
+                                <div class="result-value">{{ result.weight }} г</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="result-item">
+                                <div class="result-label">Стоимость материала</div>
+                                <div class="result-value">{{ result.material_cost }} руб.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="result-item">
+                                <div class="result-label">Стоимость печати</div>
+                                <div class="result-value">{{ result.print_cost }} руб.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <div class="result-item bg-primary text-white">
+                            <div class="result-label text-white">Итоговая стоимость</div>
+                            <div class="result-value text-white" style="font-size: 32px;">{{ result.total }} руб.</div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'cart' %}" class="btn btn-success">
+                            <i class="fas fa-shopping-cart"></i> Перейти в корзину
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Информационный блок -->
+            <div class="alert alert-info mt-4">
+                <h5><i class="fas fa-info-circle"></i> Как рассчитать объем модели?</h5>
+                <p class="mb-0">Объем модели можно узнать в любом 3D-редакторе (Blender, Fusion 360, Cura):</p>
+                <ul class="mt-2 mb-0">
+                    <li>В Cura: нажмите на модель → информация → объем</li>
+                    <li>В Blender: в режиме редактирования → панель статистики → объем</li>
+                    <li>Примерные объемы: фигурка 5-10 см³, брелок 2-3 см³, деталь 20-50 см³</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Цены материалов (руб/г)
+    const materialPrices = {
+        'pla': 5,
+        'abs': 6,
+        'petg': 7
+    };
+    
+    // Выбор материала
+    document.querySelectorAll('.material-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.material-card').forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            const material = this.dataset.material;
+            document.getElementById('material_type').value = material;
+        });
+    });
+    
+    // Отображение процента заполнения
+    const infillSlider = document.getElementById('infill');
+    const infillValue = document.getElementById('infillValue');
+    
+    infillSlider.addEventListener('input', function() {
+        infillValue.textContent = this.value + '%';
+    });
+    
+    // Анимация выбора материала по умолчанию
+    document.querySelector('.material-card[data-material="pla"]').classList.add('selected');
+</script>
+{% endblock %}

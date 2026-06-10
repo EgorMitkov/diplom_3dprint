@@ -1,0 +1,47 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}История расчетов{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">История ваших расчетов</h1>
+    
+    {% if calculations %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Дата</th>
+                    <th>Материал</th>
+                    <th>Объем (см³)</th>
+                    <th>Заполнение</th>
+                    <th>Вес (г)</th>
+                    <th>Стоимость</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for calc in calculations %}
+                <tr>
+                    <td>{{ calc.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ calc.get_material_type_display|default:calc.material_type|upper }}</td>
+                    <td>{{ calc.volume }}</td>
+                    <td>{{ calc.infill }}%</td>
+                    <td>{{ calc.weight }} г</td>
+                    <td><strong>{{ calc.total_cost }} руб.</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> У вас пока нет сохраненных расчетов. 
+        Используйте калькулятор, чтобы создать первый расчет.
+    </div>
+    {% endif %}
+    
+    <a href="{% url 'calculator' %}" class="btn btn-primary">
+        <i class="fas fa-calculator"></i> Новый расчет
+    </a>
+</div>
+{% endblock %}

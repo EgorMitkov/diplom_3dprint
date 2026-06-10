@@ -1,0 +1,83 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<!-- Hero секция -->
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4">3D Печать любой сложности</h1>
+        <p class="lead">Качественная печать из PLA, ABS, PETG, Resin и других материалов</p>
+        <a href="{% url 'product_list' %}" class="btn btn-light btn-lg mt-3">
+            <i class="fas fa-shopping-cart"></i> Перейти в каталог
+        </a>
+        <a href="{% url 'calculator' %}" class="btn btn-outline-light btn-lg mt-3 ms-2">
+            <i class="fas fa-calculator"></i> Рассчитать стоимость
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Преимущества -->
+    <div class="row text-center mb-5">
+        <div class="col-md-3">
+            <i class="fas fa-cube fa-3x text-primary mb-3"></i>
+            <h5>Высокое качество</h5>
+            <p>Используем только качественные материалы и современное оборудование</p>
+        </div>
+        <div class="col-md-3">
+            <i class="fas fa-clock fa-3x text-primary mb-3"></i>
+            <h5>Быстрая печать</h5>
+            <p>Соблюдаем сроки, быстрая обработка заказов</p>
+        </div>
+        <div class="col-md-3">
+            <i class="fas fa-palette fa-3x text-primary mb-3"></i>
+            <h5>Любые цвета</h5>
+            <p>Большой выбор цветов и материалов</p>
+        </div>
+        <div class="col-md-3">
+            <i class="fas fa-truck fa-3x text-primary mb-3"></i>
+            <h5>Доставка по Нижегородской области</h5>
+            <p>Быстрая и надежная доставка по региону</p>
+        </div>
+    </div>
+
+    <!-- Рекомендуемые товары -->
+    <h2 class="text-center mb-4">Рекомендуемые товары</h2>
+    <div class="row">
+        {% for product in featured_products %}
+        <div class="col-md-3">
+            <div class="card product-card">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                {% else %}
+                <div class="card-img-top bg-secondary text-white text-center py-5">
+                    <i class="fas fa-cube fa-3x"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.description|truncatechars:100 }}</p>
+                    <div class="price">
+                        {{ product.price }} руб. / {{ product.get_unit_display }}
+                    </div>
+                    {% if product.discount_percent > 0 %}
+                    <div class="old-price">
+                        <del>{{ product.price|add:product.price|floatformat:0 }}</del>
+                        <span class="text-danger"> -{{ product.discount_percent }}%</span>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary mt-2">
+                        Подробнее
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p>Товары временно отсутствуют</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
